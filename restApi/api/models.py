@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.utils import timezone
 
 
@@ -13,7 +13,7 @@ class UserProfile(models.Model):
     4. reiceve notifications from the followed profiles if needed
 
     """
-    owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name="my_profile")
+    owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
     first_name = models.CharField(max_length=20,blank=True)
     last_name =  models.CharField(max_length=20, blank=True)
     image = models.ImageField(upload_to="users/images", blank=True)
@@ -25,7 +25,7 @@ class UserProfile(models.Model):
 
 
     def __str__(self):
-        return self.owner.username
+        return self.owner.email
     
 
     def follow(self, profile):
@@ -50,7 +50,7 @@ class Follow(models.Model):
     notifications = models.BooleanField(default=True)
     started_at = models.DateTimeField(auto_now=True)
 
-    # prevent the combination of the two fields' values from being duplicated in any other rows
+    # Prevent the combination of the two fields' values from being duplicated in any other rows
     class Meta:
         unique_together = ("follower","followed")
 
@@ -77,7 +77,57 @@ class Block(models.Model):
 
 
 
+#-------------------------------------------------------------------------------------------------------------------------------------
+
+# Create models for post, comments and likes
+# creat a separate image model for accepting more than one image at a time for each post instance 
+
+class Post(models.Model):
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts")
+    content = models.TextField()
+    video = models.FileField(upload_to='posts/videos/', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    update_at = models.DateTimeField(auto_now_add=timezone.datetime)
+
+
+    class Meta:
+        ordering = ['author']
+
+
+class Image(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to="posts/images/", blank=True, null=True)
+
+    def __str__(self):
+        return self.post
     
+
+class Comment(models.Model):
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, related_name="comments")
+    content = models.CharField(max_length=500)
+    commented_on = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.author} commented on {self.commented_on}"
+    
+
+
+
+class Like(models.Model):
+    author = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, related_name="likes")
+    liked_post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="likes")
+    done_at = models.DateTimeField(auto_now_add=True)
+
+
+    def __str__(self):
+        return f"{self.author} likes {self.liked_post}"
+
+
+    
+
+
+
 
 
 
