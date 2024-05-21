@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import authService from '../services/authService';
+import login from '../services/authService';
 import {useHistory} from 'react-router-dom';
 
 const Login = () => {
@@ -10,7 +10,7 @@ const Login = () => {
     const HandleLogin = async (e) => {
         e.preventDefualt()
         try {
-           await authService.login(username, password);
+           await login(username, password);
             history.push('/')
         } catch (error) {
             console.error("failed to login", error);

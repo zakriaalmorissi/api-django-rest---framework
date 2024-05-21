@@ -2,6 +2,7 @@ import axios from 'axios';
 import React from 'react';
 import { useState, useEffect } from 'react';
 import './styles/App.css';
+import   refreshToken from './services/authService';
 
 const Api = () => {
     const [posts, setPosts] = useState([]);
@@ -11,16 +12,26 @@ const Api = () => {
         e.preventDefault();
         try {
             const postId = e.target.getAttribute('data-post-id');
-            console.log(postId)
-            const res = await axios.post(`http://127.0.0.1:8000/posts-actions/${postId}/comment/`, { content: comment });
-            if (res.status === 201) {
-                alert("Comment added");
-                setComment(""); // Clear the comment input after successful submission
-            } else {
-                console.log(res.status)
-                alert("Failed to add comment");
-            }
-        } catch (error) {
+            if (refreshToken()){
+
+                const token = localStorage.getItem('user');
+            
+                const res = await axios.post(`http://127.0.0.1:8000/posts-actions/${postId}/comment/`, {
+                    content: comment,
+                    headers: {
+                        
+                        'Authorization': `Beerer ${token}`
+                    }
+                    });
+                if (res.status === 201) {
+                    alert("Comment added");
+                    setComment(""); // Clear the comment input after successful submission
+                } else {
+                    console.log(res.status)
+                    alert("Failed to add comment");
+                }
+
+        }} catch (error) {
             console.error("Error:", error);
         }
     };
